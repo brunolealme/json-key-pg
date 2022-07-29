@@ -1,16 +1,16 @@
 package com.example.demo;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.util.JSONPObject;
-import org.springframework.stereotype.Service;
+import org.json.JSONObject;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
+import java.util.Map;
 
-@Service
+
 @RestController
 @RequestMapping("/app")
 public class AppController {
@@ -21,30 +21,35 @@ public class AppController {
         this.mapper = mapper;
     }
 
-
     @PostMapping
     public String app(@RequestBody Payload payload) throws Exception {
+        Map<String, Object> response = new HashMap<>();
+
         var json = mapper.writeValueAsString(payload);
+        JSONObject object = extractNode(json);
 
-        var jsonNode = mapper.readTree(json);
+        var names = object.keys();
 
-
-
-        var names = jsonNode.fieldNames();
-
+        //campos flat
         while (names.hasNext()) {
-           var a = jsonNode.get(names.next()).getNodeType();
-            a.name();
-//            if (jsonNode.get(names.next()) instanceof JSONPObject) {
-//
-//            }
+            var name = names.next();
+            var field = object.get(name);
+
+            //checa composicao
+            if (field instanceof JSONObject) {
+                var nestedField = object.getJSONObject(name).toMap();
+                // campos composicao
+                nestedField.forEach((k, v) -> response.put(k, v));
+            }
+            response.put(name, field);
         }
 
 
-        jsonNode.get()
+        return mapper.writeValueAsString(response);
+    }
 
-
-        return null;
+    private JSONObject extractNode(String key) {
+        return new JSONObject(key);
     }
 
 }
