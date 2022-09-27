@@ -2,7 +2,6 @@ package com.example.demo;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import org.json.JSONObject;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,36 +23,23 @@ public class AppController {
     }
 
     @PostMapping
-    public String app(@RequestBody Payload payload) throws Exception {
+    public String app(@RequestBody Map<String, Object> request) throws Exception {
+
         Map<String, Object> response = new HashMap<>();
-
-        var json = mapper.writeValueAsString(payload);
-        JSONObject object = new JSONObject(json);
-
-        fillFlatJson(response, object);
+        flatteningJson("", request, response);
         return mapper.writeValueAsString(response);
     }
 
-    private void fillFlatJson(Map<String, Object> response, JSONObject object) {
-        var keys = object.keys();
+    private void flatteningJson(String key, Map<String, Object> data, Map<String, Object> result) {
+        data.entrySet().iterator().forEachRemaining((nxt) -> {
+            String currentKey = key + (key.isEmpty() ? "" : '.') + nxt.getKey();
+            Object value = nxt.getValue();
 
-        //campos flat
-        while (keys.hasNext()) {
-            var name = keys.next();
-            var field = object.get(name);
-
-            //checa composicao
-            if (field instanceof JSONObject) {
-                var nestedField = object.getJSONObject(name).toMap();
-
-              //  fillFlatJson(nestedField, field);
-                // campos composicao
-                nestedField.forEach((k, v) -> response.put(name.concat("_").concat(k), v));
-                continue;
+            if (value instanceof Map) {
+                flatteningJson(currentKey, ((Map<String, Object>) value), result);
+            } else {
+                result.put(currentKey, value);
             }
-            response.put(name, field);
-        }
-
+        });
     }
-
 }

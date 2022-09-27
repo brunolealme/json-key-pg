@@ -4,8 +4,8 @@ import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.Map;
 
 
 class DemoApplicationTests {
@@ -24,50 +24,24 @@ class DemoApplicationTests {
 	@Test
 	void shouldFlatJson() {
 		Map<String, Object> data = json.toMap();
+		Map<String, Object> result = new HashMap<>();
+		generateFlatMap("", data, result);
 
-		Iterator<String> iterator = data.keySet().iterator();
-		data.entrySet().stream()
-				.filter(val -> val instanceof Map)
-				.flatMap((x) -> x.)
-
-				.collect(Collectors.toList());
-	}
-	@Test
-	void callCode(){
-		flatten(json.toMap());
-
-
+		System.out.println(result);
 	}
 
+	private void generateFlatMap(String key, Map<String, Object> data, Map<String, Object> result) {
+		data.entrySet().iterator().forEachRemaining((nxt) -> {
+			String currentKey = key + (key.isEmpty() ? "" : '.') + nxt.getKey();
+			Object value = nxt.getValue();
 
-	@SuppressWarnings("unchecked")//recursive helper method
-	private static Map<String, Object> flatten(final String key, final Map<String, Object> map,
-											   final Map<String, Object> result) {
-		final Set<Map.Entry<String, Object>> entries = map.entrySet();
-		if (!entries.isEmpty()) {
-			for (final Map.Entry<String, Object> entry : entries) {
-				//iterate over entries
-				final String currKey = key + (key.isEmpty() ? "" : '.') + entry.getKey();
-				//append current key to previous key, adding a dot if the previous key was not an empty String
-				final Object value = entry.getValue();
-				if (value instanceof Map) {//current value is a Map
-					flatten(currKey, (Map<String, Object>) value, result);//flatten Map
-				} else if (value instanceof List) {//current value is a List
-					final List<Object> list = (List<Object>) value;
-					for (int i = 0, size = list.size(); i < size; i++) {
-						result.put(currKey + '.' + (i + 1), list.get(i));
-					}
-					//iterate over the List and append the index to the current key when setting value
-				} else {
-					result.put(currKey, value);//set normal value
-				}
+			if (value instanceof Map) {
+				generateFlatMap(currentKey, ((Map<String, Object>) value), result);
+			} else {
+				result.put(currentKey, value);
 			}
-		}
-		return result;
-	}
-	public static Map<String, Object> flatten(final Map<String, Object> map) {
-		return flatten("", map, new HashMap<>());
-		//use new TreeMap<>() to order map based on key
+		});
+
 	}
 
 
