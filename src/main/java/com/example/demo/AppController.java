@@ -1,6 +1,7 @@
 package com.example.demo;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.json.JSONObject;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,6 +20,7 @@ public class AppController {
 
     AppController(ObjectMapper mapper) {
         this.mapper = mapper;
+        this.mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
     }
 
     @PostMapping
@@ -26,30 +28,32 @@ public class AppController {
         Map<String, Object> response = new HashMap<>();
 
         var json = mapper.writeValueAsString(payload);
-        JSONObject object = extractNode(json);
+        JSONObject object = new JSONObject(json);
 
-        var names = object.keys();
+        fillFlatJson(response, object);
+        return mapper.writeValueAsString(response);
+    }
+
+    private void fillFlatJson(Map<String, Object> response, JSONObject object) {
+        var keys = object.keys();
 
         //campos flat
-        while (names.hasNext()) {
-            var name = names.next();
+        while (keys.hasNext()) {
+            var name = keys.next();
             var field = object.get(name);
 
             //checa composicao
             if (field instanceof JSONObject) {
                 var nestedField = object.getJSONObject(name).toMap();
+
+              //  fillFlatJson(nestedField, field);
                 // campos composicao
-                nestedField.forEach((k, v) -> response.put(k, v));
+                nestedField.forEach((k, v) -> response.put(name.concat("_").concat(k), v));
+                continue;
             }
             response.put(name, field);
         }
 
-
-        return mapper.writeValueAsString(response);
-    }
-
-    private JSONObject extractNode(String key) {
-        return new JSONObject(key);
     }
 
 }
